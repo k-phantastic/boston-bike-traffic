@@ -1,3 +1,6 @@
+// Import d3 
+import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
+
 // Import Mapbox as an ESM module
 import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/+esm';
 
@@ -25,7 +28,8 @@ const routeStyling = {
     'line-opacity': 0.4,
 };
 
-map.on('load', async () => {
+map.on('load', async () => { // Ensure JSON data is loaded after the map is ready
+    
     // Add Boston bike routes and layer to the map
     map.addSource('boston_route', { // 'boston_route' is the source ID, can be any string
         type: 'geojson',
@@ -37,6 +41,7 @@ map.on('load', async () => {
         source: 'boston_route',
         paint: routeStyling,
     });
+    
     // Add Cambridge bike routes and layer to the map
     map.addSource('cambridge_route', {
         type: 'geojson',
@@ -49,4 +54,17 @@ map.on('load', async () => {
         paint: routeStyling,
     });
     console.log('Bike routes layers added to the map.');
+
+    // Load Bluebikes station data from JSON, using d3 
+    let jsonData; 
+    try {
+        const jsonurl = 'https://dsc-courses.github.io/dsc209r-2025-fa/labs/lab07/data/bluebikes-stations.json';
+        // Await JSON fetch
+        const jsonData = await d3.json(jsonurl); // Load JSON file asynchronously using D3.js, jsonData holds loaded data
+        console.log('Loaded JSON Data:', jsonData); // Log to verify structure
+    } catch (error) { // Handle errors (e.g. file not found, CORS issues, incorrect JSON formatting)
+        console.error('Error loading JSON:', error); // Handle errors
+    }
+    // let stations = jsonData.data.stations;
+    // console.log('Stations Array:', stations);
 });
