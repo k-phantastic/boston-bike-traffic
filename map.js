@@ -60,11 +60,45 @@ map.on('load', async () => { // Ensure JSON data is loaded after the map is read
     try {
         const jsonurl = 'https://dsc-courses.github.io/dsc209r-2025-fa/labs/lab07/data/bluebikes-stations.json';
         // Await JSON fetch
-        const jsonData = await d3.json(jsonurl); // Load JSON file asynchronously using D3.js, jsonData holds loaded data
+        jsonData = await d3.json(jsonurl); // Load JSON file asynchronously using D3.js, jsonData holds loaded data
         console.log('Loaded JSON Data:', jsonData); // Log to verify structure
     } catch (error) { // Handle errors (e.g. file not found, CORS issues, incorrect JSON formatting)
         console.error('Error loading JSON:', error); // Handle errors
     }
-    // let stations = jsonData.data.stations;
-    // console.log('Stations Array:', stations);
+
+    let stations = jsonData.data.stations;
+    console.log('Stations Array:', stations);
+
+    const svg = d3.select('#map').select('svg');
+
+    function getCoords(station) {
+        const point = new mapboxgl.LngLat(+station.lon, +station.lat); // Convert lon/lat to Mapbox LngLat
+        const { x, y } = map.project(point); // Project to pixel coordinates
+        return { cx: x, cy: y }; // Return as object for use in SVG attributes
+    }
+
+    // Append circles to the SVG for each station
+    const circles = svg
+        .selectAll('circle')
+        .data(stations)
+        .enter()
+        .append('circle')
+        .attr('r', 5) // Radius of the circle
+        .attr('fill', 'steelblue') // Circle fill color
+        .attr('stroke', 'white') // Circle border color
+        .attr('stroke-width', 1) // Circle border thickness
+        .attr('opacity', 0.8); // Circle opacity
+
+    // Function to update circle positions when the map moves/zooms
+    function updatePositions() {
+    circles
+        .attr('cx', (d) => getCoords(d).cx) // Set the x-position using projected coordinates
+        .attr('cy', (d) => getCoords(d).cy); // Set the y-position using projected coordinates
+    }
+
+    // Reposition markers on map interactions
+    map.on('move', updatePositions); // Update during map movement
+    map.on('zoom', updatePositions); // Update during zooming
+    map.on('resize', updatePositions); // Update on window resize
+    map.on('moveend', updatePositions); // Final adjustment after movement ends
 });
