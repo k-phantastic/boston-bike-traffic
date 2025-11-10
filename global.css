@@ -8,3 +8,14 @@ body {
     margin: auto;
     padding: 1em;
 }
+
+.timeControls {
+    display: flex;
+    align-items: baseline;
+    gap: 1em;
+    margin-left: auto;
+}
+
+#selectedTime, #anyTime {
+    display: block;
+}

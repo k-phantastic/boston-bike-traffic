@@ -54,7 +54,31 @@ map.on('load', async () => { // Ensure JSON data is loaded after the map is read
         paint: routeStyling,
     });
     console.log('Bike routes layers added to the map.');
+    
+    // Load Bluebikes traffic data
+    let trips;
+    try {
+        const csvurl = 'https://dsc-courses.github.io/dsc209r-2025-fa/labs/lab07/data/bluebikes-traffic-2024-03.csv';
+        trips = await d3.csv(csvurl); // Load CSV file asynchronously using D3.js
+        console.log('Loaded Bluebikes Trips Data:', trips); // Log to verify structure
+    } catch (error) {
+        console.error('Error loading CSV:', error); // Handle errors
+    }
+    
+    const departures = d3.rollup(
+        trips,
+        (v) => v.length,
+        (d) => d.start_station_id,
+    );
+    console.log('Departures by Station ID:', departures);
 
+    const arrivals = d3.rollup(
+        trips,
+        (v) => v.length,
+        (d) => d.end_station_id,
+    );
+    console.log('Arrivals by Station ID:', arrivals);
+    
     // Load Bluebikes station data from JSON, using d3 
     let jsonData; 
     try {
@@ -66,16 +90,32 @@ map.on('load', async () => { // Ensure JSON data is loaded after the map is read
         console.error('Error loading JSON:', error); // Handle errors
     }
 
-    let stations = jsonData.data.stations;
-    console.log('Stations Array:', stations);
+    let stations = jsonData.data.stations; // Extract stations array from loaded JSON data
 
-    const svg = d3.select('#map').select('svg');
+    const svg = d3.select('#map').select('svg'); // Select the SVG overlay within the map container
 
+    // Function to convert station lon/lat to pixel coordinates on the map
     function getCoords(station) {
         const point = new mapboxgl.LngLat(+station.lon, +station.lat); // Convert lon/lat to Mapbox LngLat
         const { x, y } = map.project(point); // Project to pixel coordinates
         return { cx: x, cy: y }; // Return as object for use in SVG attributes
     }
+
+    // Addition of arrivals, departures, and totalTraffic to each station object
+    stations = stations.map((station) => {
+        let id = station.short_name;
+        station.arrivals = arrivals.get(id) ?? 0; // Default to 0 if no arrivals
+        station.departures = departures.get(id) ?? 0; // Default to 0 if no departures
+        station.totalTraffic = station.arrivals + station.departures;
+        return station;
+    });
+    console.log('Stations Array:', stations);
+
+    // Define a radius scale for circle sizes based on total traffic
+    const radiusScale = d3
+        .scaleSqrt()
+        .domain([0, d3.max(stations, (d) => d.totalTraffic)])
+        .range([0, 25]);
 
     // Append circles to the SVG for each station
     const circles = svg
@@ -83,17 +123,26 @@ map.on('load', async () => { // Ensure JSON data is loaded after the map is read
         .data(stations)
         .enter()
         .append('circle')
-        .attr('r', 5) // Radius of the circle
+        .attr('r', (d) => radiusScale(d.totalTraffic)) // Radius of the circle based on total traffic
         .attr('fill', 'steelblue') // Circle fill color
         .attr('stroke', 'white') // Circle border color
         .attr('stroke-width', 1) // Circle border thickness
-        .attr('opacity', 0.8); // Circle opacity
+        .attr('opacity', 0.6) // Circle opacity
+        .attr('pointer-events', 'auto') // Ensure circles can capture mouse events
+        .each(function (d) {
+            // Add <title> for browser tooltips
+            d3.select(this)
+                .append('title')
+                .text(
+                    `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals) at ${d.name}`,
+                );
+        });
 
     // Function to update circle positions when the map moves/zooms
     function updatePositions() {
-    circles
-        .attr('cx', (d) => getCoords(d).cx) // Set the x-position using projected coordinates
-        .attr('cy', (d) => getCoords(d).cy); // Set the y-position using projected coordinates
+        circles
+            .attr('cx', (d) => getCoords(d).cx) // Set the x-position using projected coordinates
+            .attr('cy', (d) => getCoords(d).cy); // Set the y-position using projected coordinates
     }
 
     // Reposition markers on map interactions
@@ -102,3 +151,5 @@ map.on('load', async () => { // Ensure JSON data is loaded after the map is read
     map.on('resize', updatePositions); // Update on window resize
     map.on('moveend', updatePositions); // Final adjustment after movement ends
 });
+
+// Reactivity 

@@ -18,7 +18,7 @@ body {
 
 #map svg {
     /* background: yellow;
-    opacity: 50%; */
+    opacity: 50%; */ 
     position: absolute;
     z-index: 1;
     width: 100%;
