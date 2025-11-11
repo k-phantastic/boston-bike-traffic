@@ -31,11 +31,53 @@ body {
     pointer-events: none; /* Allow map interactions through the SVG */
 }
 
-#map circle {
+#map circle, 
+.legend > div {
     --color: color-mix(
         in oklch,
         var(--color-departures) calc(100% * var(--departure-ratio)),
         var(--color-arrivals)
     );
+}
+
+#map circle {
     fill: var(--color);
+}
+
+.legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2em; /* wider gap between groups */
+    margin-top: 0.75em;
+    font-family: system-ui, sans-serif;
+    font-size: 0.9rem;
+}
+
+.legend-label {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-right: 0.5em;
+}
+
+.legend > div {
+    display: flex;
+    align-items: center;
+    gap: 0.4em; /* smaller gap between swatch and text */
+    position: relative;
+}
+
+.legend > div::before {
+    content: "";
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border-radius: 50%;
+    background: color-mix(
+        in oklch,
+        var(--color-departures) calc(100% * var(--departure-ratio)),
+        var(--color-arrivals)
+    );
+    flex-shrink: 0;
 }
