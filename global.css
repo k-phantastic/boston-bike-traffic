@@ -16,6 +16,6 @@ body {
     margin-left: auto;
 }
 
-#selectedTime, #anyTime {
+#selected-time, #any-time {
     display: block;
 }
